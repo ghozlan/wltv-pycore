@@ -44,6 +44,8 @@ def sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=64,N0=1):
         SIM['REAL_DIM_PER_SYM'] = 2;
 
     SIM['T_TRANSMISSION'] = T_TRANSMISSION;
+    SIM['T_RX'] = T_TRANSMISSION; # should be updated with: 
+                                  # SIM['T_RX'] = SIM['T_TRANSMISSION'] + max(CH['tau'])
     SIM['T_SIMULATION'] = 3*T_TRANSMISSION;        
     SIM['df'] = 1.0/SIM['T_SIMULATION'];
     
@@ -56,7 +58,6 @@ def sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=64,N0=1):
     SIM['t'] = t
     
     SIM['N0'] = N0;
-
     return SIM
 
 
@@ -92,12 +93,12 @@ if __name__ == '__main__':
     print('W = %f, a = %f, K^prime = %d, fc (base) = %f' % (W_base,a_base,K_prime,fc_base))
 
 #%% Generating Transmitter Matrix H_TX
-def generate_vecs(W_base,a_base,N_layers,fc_base, SIM,rx=False):
+def generate_vecs(W_base,a_base,N_layers,fc_base, SIM,IS_RX=False):
     # return [H_TX, f_min, f_max]
 
     PASSBAND = SIM['PASSBAND']
     T_XX = SIM['T_TRANSMISSION']
-    if rx==True:
+    if IS_RX==True:
         T_XX = SIM['T_RX']    
     F_samp = SIM['F_samp']
     T_SIMULATION = SIM['T_SIMULATION']
@@ -226,17 +227,16 @@ if __name__ == '__main__':
     print_log('Generating channel matrix')
     H_CH = generate_ch_matrix( CH, SIM_DICT)
 
-#%% 
+#%% Generate the channel matrix
 
+if __name__ == '__main__':
     print_log('Generating receiver matrix')
-    # Make receiver take into account the max delay (seems to be not critical)
-    SIM_RX = dict(SIM_DICT);
-    SIM_RX['T_TRANSMISSION'] = SIM_DICT['T_TRANSMISSION'] + max(CH['tau']);
     # For same band receiver
-    [H_RX, f_min, f_max] = generate_vecs(W_base,a_base,K_prime,fc_base, SIM_RX);
+    [H_RX, f_min, f_max] = generate_vecs(W_base,a_base,K_prime,fc_base,SIM_DICT,IS_RX=True);
+    #H_RX = H_RX * SIM['dt'] # the scaling is not important
     # For expanded band receiver
     K = K_prime+1;
-    [H_RX_EB, f_min, f_max] = generate_vecs(W_base,a_base,K,fc_base, SIM_RX);
+    [H_RX_EB, f_min, f_max] = generate_vecs(W_base,a_base,K,fc_base,SIM_DICT,IS_RX=True);
     #H_RX_EB = H_RX_EB * SIM['dt'] # the scaling is not important
     
     
@@ -594,10 +594,9 @@ if __name__ == '__main__':
     pass
 
 
-#%% Plot Input and Outout Spectra (broken down by layer)
+#%% Plot input and outout spectra (broken down by layer)
 
 def plot_spectrum(H_TX, H_CH, SCH, CH, SIM):
-    from numpy.fft import ifft, fftshift, fft
     [Sigma_X_NORMALIZED, layer] = power_alloc(H_TX, SCH, SIM_DICT);
     K_prime = len(layer);
     SELECTED_VECS = list()
@@ -673,65 +672,3 @@ if __name__ == '__main__':
 #legend()
 #
 #show()
-
-#%%
-#
-#DATA_DICT = {};
-#DATA_DICT['SIM'] = SIM;
-#DATA_DICT['SNRdB'] = SNRdB_vec;
-#DATA_DICT['CHANNEL'] = CH;
-#DATA_DICT['SCHEME'] = {};
-#DATA_DICT['SCHEME']['PARAMS'] = SCHEMES_DICT[scheme_index];
-#DATA_DICT['SCHEME']['RATE'] = {}
-#DATA_DICT['SCHEME']['RATE']['R_OPTRX'] = RATE_OPT;
-#DATA_DICT['SCHEME']['RATE']['R_SB_JLD'] = RATE_SB_JLD;
-##DATA_DICT['SCHEME']['RATE']['R_SB_ILD1'] = R_SB_ILD1;
-##DATA_DICT['SCHEME']['RATE']['R_SB_ILD2'] = R_SB_ILD2;
-
-#%%
-
-#def plot_spectrum(H_TX, H_CH, SCH, CH, SIM):
-#[Sigma_X_NORMALIZED, layer] = power_alloc(H_TX, SCH, SIM);
-#K_prime = length(layer);
-#SELECTED_VECS = zeros(1,K_prime);
-#for k in range(K_prime):
-#    SELECTED_VECS(k) = layer{k}(2);
-#
-##%%
-#N_FFT = SIM.T_SIMULATION/SIM.dt;
-#f = linspace(-SIM.F_samp/2,SIM.F_samp/2,N_FFT);
-#
-#H_TX_SELECTED = H_TX(:,SELECTED_VECS);
-#FT_IN = fftshift( fft(H_TX_SELECTED)*SIM.dt ,1);
-#
-#line_color = {'b',[0 0.5 0],'r','m'};
-#
-#W_base = SCH(1); a_base = SCH(2); K_prime = SCH(3); fc_base = SCH(4);
-#f_max = (fc_base+W_base/2)*a_base^(K_prime-1);
-#F = f_max * max(CH.alpha);
-#
-#H_CHTX = H_CH * H_TX_SELECTED;
-#FT_OUT = fftshift( fft(H_CHTX)*SIM.dt , 1);
-#
-#figure(20)
-#clf(20)
-#subplot(K_prime+1,1,1)
-#for k=1:K_prime
-#    plot(f,abs(FT_IN(:,k)),'Color',line_color{k},'LineWidth',2)
-#    hold on
-#    axis([-F F 0 1])
-#end
-#hold off
-#xlabel('f')
-#ylabel('|FT|')
-#title('Input Spectrum')
-#
-#for k=1:K_prime:
-#    subplot(K_prime+1,1,k+1)
-#    plot(f,abs(FT_OUT(:,k)),'Color',line_color{k},'LineWidth',2)
-#    axis([-F F 0 1])
-#    xlabel('f')
-#    ylabel('|FT|')
-#    title(sprintf('Output Spectrum (k''=%d)',k))
-#
-#set(20,'Position',[2*480 50 2*480 2*470]);figure(20)
