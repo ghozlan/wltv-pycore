@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue May 05 17:27:14 2015
-# USE DICTIONARY RATHER THAN CLASS
-# LOOP
+
+Library of functions for information rate computation for
+multi-layer transmisssion in wideband linear time-varying channels
+
 @author: Hassan
 """
 
@@ -15,23 +17,20 @@ from numpy.fft import ifft, fftshift, fft
 from numpy.linalg import svd
 from numpy.linalg import eigvalsh #eigvalsh : eigenvalues of a symmetric or Hermitian (conjugate symmetric)
 
-#%%
-
-if __name__ == '__main__':
-    print "Running as main"
-else:
-    print "Importing module"
-
-#%%
-def print_log(string): # prints to screen and logs to file
+#%% Function prints to screen and logs to file
+def print_log(string): 
     print string 
+    log_filename = 'log.txt'
+    with open(log_filename,'a') as log_file:
+        log_file.write(string + '\n')
     
 #%% Choose Scheme, Channel, and SNR values
+
+SNRdB_vec = arange(0,30+1);
 
 scheme_index = 1        # 1, 2, 3, 4
 channel_index = 'E';    # 'A', 'B', 'C', 'D', 'E'
 
-SNRdB_vec = arange(0,30+1);
 RATE_ZEROS = zeros(SNRdB_vec.shape)
 
 #%% Simulation Parameters
@@ -60,22 +59,6 @@ def sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=64,N0=1):
     SIM['N0'] = N0;
     return SIM
 
-
-SIM_DICT = sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=16,N0=1)
-
-PASSBAND = SIM_DICT['PASSBAND'];
-REAL_DIM_PER_SYM = SIM_DICT['REAL_DIM_PER_SYM'];
-T_TRANSMISSION = SIM_DICT['T_TRANSMISSION'];
-T_SIMULATION = SIM_DICT['T_SIMULATION'];
-df = SIM_DICT['df'];
-F_samp = SIM_DICT['F_samp'];
-dt = SIM_DICT['dt'];
-t = SIM_DICT['t'];
-N0 = SIM_DICT['N0'];
-
-SNR_vec = 10**(SNRdB_vec/10.0);
-P_vec = SNR_vec * SIM_DICT['N0']
-
 #%% SCHEMES
 
 SCHEMES_DICT = {}
@@ -83,14 +66,6 @@ SCHEMES_DICT[1] = {'W_base':1, 'a_base': 2, 'K_prime': 3, 'fc_base':1.5}
 SCHEMES_DICT[2] = {'W_base':1, 'a_base': 1.587401051968199, 'K_prime': 4, 'fc_base':1.5}
 SCHEMES_DICT[3] = {'W_base':7, 'a_base': 1, 'K_prime': 1, 'fc_base':4.5}
 SCHEMES_DICT[4] = {'W_base':1, 'a_base': 1, 'K_prime': 1, 'fc_base':1.5}
-
-if __name__ == '__main__':
-    SCH = SCHEMES_DICT[scheme_index]
-    W_base, a_base, K_prime = SCH['W_base'], SCH['a_base'], SCH['K_prime']
-    fc_base = SCH['fc_base']
-    
-    print('Scheme parameters:')
-    print('W = %f, a = %f, K^prime = %d, fc (base) = %f' % (W_base,a_base,K_prime,fc_base))
 
 #%% Generating Transmitter Matrix H_TX
 def generate_vecs(W_base,a_base,N_layers,fc_base, SIM,IS_RX=False):
@@ -176,14 +151,6 @@ def generate_vecs(W_base,a_base,N_layers,fc_base, SIM,IS_RX=False):
     return [H_TX, f_min, f_max]
     #return H_TX
     
-#%% 
-
-if __name__ == '__main__':
-    print_log('Generating transmitter matrix')
-    H_TX, f_min, f_max = generate_vecs(W_base,a_base,K_prime,fc_base,SIM_DICT)
-    B_TOTAL = f_max - f_min
-    f_center = (f_max + f_min) / 2.0
-
 #%% CHANNELS
 
 CHANNELS_DICT = {}
@@ -193,13 +160,6 @@ CHANNELS_DICT['C'] = {'N_paths':2, 'h_wb':[1, 1.5], 'tau':[0, 2], 'alpha':[1, 2]
 CHANNELS_DICT['D'] = {'N_paths':2, 'h_wb':[1, 1.5], 'tau':[2, 3], 'alpha':[1, 2]}
 CHANNELS_DICT['E'] = {'N_paths':3, 'h_wb':[1, -0.7, 1.5],'tau':[2, 1, 3],'alpha':[1, 1.25, 2]}
 
-if __name__ == '__main__':
-    CH = CHANNELS_DICT[channel_index]
-    
-    print('Channel parameters:')
-    for key in ['N_paths', 'h_wb', 'tau', 'alpha']: print key + " =", CH[key]
-    
-    SIM_DICT['T_RX'] = SIM_DICT['T_TRANSMISSION'] + max(CH['tau']);    
         
 #%% Generating the channel matrix H_CH
 
@@ -221,24 +181,6 @@ def generate_ch_matrix( CH, SIM ):
     
     return K0_t_tau * dt
 
-#%%
-
-if __name__ == '__main__':
-    print_log('Generating channel matrix')
-    H_CH = generate_ch_matrix( CH, SIM_DICT)
-
-#%% Generate the channel matrix
-
-if __name__ == '__main__':
-    print_log('Generating receiver matrix')
-    # For same band receiver
-    [H_RX, f_min, f_max] = generate_vecs(W_base,a_base,K_prime,fc_base,SIM_DICT,IS_RX=True);
-    #H_RX = H_RX * SIM['dt'] # the scaling is not important
-    # For expanded band receiver
-    K = K_prime+1;
-    [H_RX_EB, f_min, f_max] = generate_vecs(W_base,a_base,K,fc_base,SIM_DICT,IS_RX=True);
-    #H_RX_EB = H_RX_EB * SIM['dt'] # the scaling is not important
-    
     
 #%% Generate covariance matrix of the transmitted symbols
 #   and some information about the layers 
@@ -288,12 +230,6 @@ def power_alloc( H_TX, SCHEME, SIM ):
     #print('CHECK POWER CONSTRAINT: POWER = %f (linear scale)' % POWER_FACTOR)
     
     return [Sigma_X_NORMALIZED, layer]
-
-#%%
-
-if __name__ == '__main__':
-    #Sigma_X_NORMALIZED, layer = power_alloc( H_TX, SCHEMES_DICT[scheme_index], SIM_DICT)
-    pass
     
 #%% Rate of optimal receiver
     
@@ -346,12 +282,6 @@ def info_rate_optrx( H_TX, H_CH, P_vec, SCHEME, SIM ):
     
     return R_vec
 
-#%%
-
-if __name__ == '__main__':
-    print_log('Computing rate for optimal receiver')
-    RATE_OPT = info_rate_optrx( H_TX, H_CH, P_vec, SCHEMES_DICT[scheme_index], SIM_DICT );
-
 #%% Rate of expanded band receiver with joint decoding
 
 def info_rate_expand( H_TX, H_CH, H_RX, P_vec, SCHEME, SIM ):
@@ -398,19 +328,9 @@ def info_rate_expand( H_TX, H_CH, H_RX, P_vec, SCHEME, SIM ):
     R_vec = I_vec / 2 * REAL_DIM_PER_SYM / T_TRANSMISSION;
 
     return R_vec
-#%%    
-
-if __name__ == '__main__':
-    print_log('Computing rate for expanded band receiver')
-    RATE_EB = info_rate_expand( H_TX, H_CH, H_RX_EB, P_vec, SCHEMES_DICT[scheme_index], SIM_DICT );
 
 #%% Rate of same band receiver with joint layer decoding
 
-#H_RX = H_TX * SIM['dt'];
-if __name__ == '__main__':
-    print_log('Computing rate for same band receiver with joint layer decoding')
-    H_RX = H_TX # the scaling is not important
-    RATE_SB_JLD = info_rate_expand( H_TX, H_CH, H_RX, P_vec, SCHEMES_DICT[scheme_index], SIM_DICT );
 
 #%% Rate of same band receiver with individual layer decoding
 
@@ -516,43 +436,13 @@ def info_rate_ild_fast( H_TX, H_CH, H_RX, P_vec, SCHEME, SIM ):
     R_vec = sum(R_vec_per_layer,0); # sum the rows (sum along the columns)
     
     return R_vec
-    
-#%%
 
-if __name__ == '__main__':
-    print_log('Computing rate for same band receiver with individual layer decoding')
-
-    H_RX = H_TX*sqrt(2*SIM_DICT['dt']); # H_RX.transpose().dot(H_RX) = IDENTITY #XXXX
-                                        # the scaling is very important for correct results
-    RATE_SB_ILD = info_rate_ild( H_TX, H_CH, H_RX, P_vec, SCHEMES_DICT[scheme_index], SIM_DICT );
-    
-
-#%%
-import sys
-#if __name__ == '__main__': sys.exit("Finished.")
-    
-#%% Collect the results of the simulation
-    
-if __name__ == '__main__': 
-    print_log('Collecting results')
-    SNRdB_vec = 10*log10(P_vec/SIM_DICT['N0'])
-    DATA = {};
-    DATA['SIM'] = SIM_DICT;
-    DATA['SNRdB'] = SNRdB_vec;
-    DATA['CHANNEL_PARAMS'] = CHANNELS_DICT[channel_index];
-    DATA['SCHEME_PARAMS'] = SCHEMES_DICT[scheme_index];
-    RX_LIST = ['OPT','EB','SB_JLD','SB_ILD']
-    DATA['RX'] = {}
-    for RX in RX_LIST: DATA['RX'][RX] = {}
-    DATA['RX']['OPT'   ]['RATE'] = RATE_OPT
-    DATA['RX']['EB'    ]['RATE'] = RATE_EB
-    DATA['RX']['SB_JLD']['RATE'] = RATE_SB_JLD
-    DATA['RX']['SB_ILD']['RATE'] = RATE_SB_ILD
-    DATA['RUNTIME'] = None # Simulation Runtime
-    DATA['RX']['EB'    ]['LABEL'] = 'EB (K=%d)' % (K) # Specify exactly how many branches were used at RX
+# For "fast" implementation:    
+#H_RX = H_TX*sqrt(2*SIM_DICT['dt']); # H_RX.transpose().dot(H_RX) = IDENTITY #XXXX
+#                                    # the scaling is very important for correct results
+# I think this has been fixed    
     
     
-
 #%% Save the results to file
 
 def save_data(filename,py_object):
@@ -566,7 +456,7 @@ def load_data(filename):
       py_object = pickle.load(fin)
     return py_object
     
-def timestamp_and_save_data(DATA,keyword=''):
+def timestamp_and_save_data(DATA,scheme_index,channel_index,keyword=''):
     import datetime
     datetime_now = datetime.datetime.now()
     hms = [datetime_now.hour, datetime_now.minute, datetime_now.second]
@@ -575,29 +465,18 @@ def timestamp_and_save_data(DATA,keyword=''):
     #timestamp = str(datetime_now.hour) + str(datetime_now.minute) + str(datetime_now.second)
     ## str() ignores leading zeros
     
-    tail = timestamp + '_' + keyword + '_py'
+    if keyword!='': keyword += '_'
+    tail = timestamp + '_' + keyword + 'py'
     root_filename  = 'channel' + channel_index.lower() + '_' 
     root_filename += 'scheme' + str(scheme_index) + '_'
     data_filename = root_filename + tail
-    save_data(data_filename,DATA);
-    print('Output saved to file: %s' %(data_filename))
-    
-
-if __name__ == '__main__': 
-    timestamp_and_save_data(DATA,keyword='wahran')
-    
-#%%
-
-if __name__ == '__main__':     
-    #save_data('multilayer.pickle',DATA_DICT)
-    #D_DICT = load_data('multilayer.pickle')
-    pass
-
-
+    save_data(data_filename,DATA)
+    return data_filename
+        
 #%% Plot input and output spectra (broken down by layer)
 
 def plot_spectrum(H_TX, H_CH, SCH, CH, SIM):
-    [Sigma_X_NORMALIZED, layer] = power_alloc(H_TX, SCH, SIM_DICT);
+    [Sigma_X_NORMALIZED, layer] = power_alloc(H_TX, SCH, SIM);
     K_prime = len(layer);
     SELECTED_VECS = list()
     for k in range(K_prime):
@@ -649,16 +528,7 @@ def plot_spectrum(H_TX, H_CH, SCH, CH, SIM):
     
     return fig
 
-#set(20,'Position',[2*480 50 2*480 2*470]);figure(20)
-
-if __name__ == '__main__':
-    plot_spectrum(H_TX, H_CH, SCH, CH, SIM_DICT)
-    fig_filename = 'SPECTRUM_CH' + channel_index +  '_SCH' + str(scheme_index)
-    savefig(fig_filename+'.eps', format='eps', dpi=1000)
-    savefig(fig_filename+'.png')
-    import Image
-    Image.open(fig_filename+'.png').save(fig_filename+'.jpg','JPEG')
-
+#%% Plot informaiton rates
 
 #%%
 #SNRdB_vec = 10*log10(P_vec/N0)
