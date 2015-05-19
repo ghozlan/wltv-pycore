@@ -45,7 +45,6 @@ def run_sim(scheme_index,channel_index,SNRdB_vec=arange(0,30+1)):
     
     print_log('Initializing simulation')
     SIM_DICT = sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=64,N0=1)
-    SIM_DICT = sim_init(PASSBAND=True,T_TRANSMISSION=32,F_samp=16,N0=1)
     SIM_DICT['T_RX'] = SIM_DICT['T_TRANSMISSION'] + max(CH['tau'])
     SNR_vec = 10**(SNRdB_vec/10.0)
     P_vec = SNR_vec * SIM_DICT['N0']

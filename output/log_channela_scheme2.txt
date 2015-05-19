@@ -1,0 +1,22 @@
+Scheme parameters:
+W = 1.000000, a = 1.587401, K^prime = 4, fc (base) = 1.500000
+Channel parameters:
+N_paths =2
+h_wb =[1, 0.5]
+tau =[0, 2]
+alpha =[1, 2]
+Initializing simulation
+Generating transmitter matrix
+Generating channel matrix
+Generating receiver matrix
+Computing rate for optimal receiver
+(54.22 sec)
+Computing rate for expanded band receiver
+(19.47 sec)
+Computing rate for same band receiver with joint layer decoding
+(9.69 sec)
+Computing rate for same band receiver with individual layer decoding
+(5.20 sec)
+Collecting results
+Output saved to file: channela_scheme2_121318_py
+Simulation runtime: 97.21 sec
