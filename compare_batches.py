@@ -7,14 +7,15 @@ Created on Fri May 08 20:30:11 2015
 
 #%%
 # get MATLAB results
-sim_filename_pattern = '[0-9]{6}_master.mat$'
-sim_filename_pattern = '[0-9]{6}_marx.mat$'
+sim_filename_pattern = '[0-9]{6}_master\.mat$'
+sim_filename_pattern = '[0-9]{6}_marx\.mat$'
 sim_filename_pattern = '[0-9]{6}_py$'
 sim_filename_pattern = 'thinice_py$'
 sim_filename_pattern = 'sarajevo_py$'
+sim_filename_pattern = '\.mat$'
 import load_batch
-RESULTS1 = load_batch.load_batch(sim_filename_pattern = 'sarajevo_py$')
-RESULTS2 = load_batch.load_batch(sim_filename_pattern = 'thinice_py$')
+RESULTS1 = load_batch.load_batch(sim_filename_pattern = '\.mat$', file_type='mat')
+RESULTS2 = load_batch.load_batch(sim_filename_pattern = '_py$')
 #RESULTS2 = load_batch.load_batch(sim_filename_pattern = 'marx.mat$', file_type='mat')
 
 #%%
@@ -24,8 +25,10 @@ import numpy
 counter = 0
 ERR = {}
 
-CH_LABELS = ['A', 'B', 'C', 'D', 'E']
-SCH_LABELS = [1, 2, 3]
+#CH_LABELS = ['A', 'B', 'C', 'D', 'E']
+#SCH_LABELS = [1, 2, 3]
+CH_LABELS = ['A', 'E']
+SCH_LABELS = [1, 2]
 from itertools import product # Caterzian/Cartesian product
 for ch_index, sch_index in product(CH_LABELS, SCH_LABELS):
     #print('Channel %s, Scheme %d' %((str(ch_index), sch_index)))
@@ -56,8 +59,9 @@ import sys
 #%%
 
 for sim_idx in sim_list: print ERR[sim_idx], '->', sim_idx
-sys.exit()
+#sys.exit()
 #%%
+SNRdB_vec = RESULTS1['SNRdB']
 i = 0
 for sim in sim_list:
     ch_index,sch_index,RX = sim

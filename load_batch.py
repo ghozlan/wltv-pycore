@@ -17,8 +17,8 @@ import os
 # get current working directory
 cwd = os.getcwd()
 # get all files in a given directory (path)
-#path = cwd + '\\data'
-path = cwd
+path = cwd + '\\output'
+#path = cwd
 #path = '.'
 
 def get_sim_file_list(sim_filename_pattern):
