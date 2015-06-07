@@ -11,6 +11,11 @@ multi-layer transmisssion in wideband linear time-varying channels
 
 from __future__ import division #makes float division default. for integer division, use //. e.g. 7//4=1
 
+import matplotlib
+matplotlib.use('Agg') # force matplotlib to not use any Xwindows backend.
+# fixes the error "no display name and no $DISPLAY environment variable"
+# when code is run on Amazon Elastic Cloud Compute (EC2)
+
 from numpy import *
 from matplotlib.pyplot import *
 from numpy.fft import ifft, fftshift, fft
